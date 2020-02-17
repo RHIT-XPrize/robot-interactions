@@ -1,7 +1,7 @@
 import json
 import sys
 from base_annotator import Annotator, AnnotationType
-from ROBCOLLOB_MoveTest import pickup_action, point_action
+from ROBCOLLOB_MoveTest import pickup_action, point_action, pick_up_and_move_block, point_action_new
 
 class ActionAnnotator(Annotator):
     def initialize(self):
@@ -15,10 +15,10 @@ class ActionAnnotator(Annotator):
         print(doAction)
         if(doAction == "true"):
             print("action True")
-            pickup_action(x_location, y_location)
+            pick_up_and_move_block(x_location, y_location)
         else:
             print("action False")
-            point_action(x_location, y_location)
+            point_action_new(x_location, y_location)
 
         annotation = ActionAnnotation()
         self.add_annotation(annotation)

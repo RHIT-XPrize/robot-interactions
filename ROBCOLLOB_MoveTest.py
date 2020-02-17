@@ -157,6 +157,101 @@ def pickup_action(x, y):
 
   rospy.sleep(1)
 
+def pick_up_and_move_block(x, y):
+  rospy.init_node("GraspingDemo")
+  global gripper
+  gripper = intera_interface.Gripper('right_gripper')
+  gripper.open()
+  move_to(x, y, 0.20)
+  move_to(x,y, 0.10)
+  gripper.close()
+  move_to(x, y, 0.30)
+  gripper.open()
+
+def point_action_new(x, y):
+  rospy.init_node("GraspingDemo")
+  global gripper
+  gripper = intera_interface.Gripper('right_gripper')
+  gripper.close()
+  move_to(x, y, 0.30)
+
+def build_three_high_tower(xlist, yList):
+  rospy.init_node("GraspingDemo")
+  global gripper
+  gripper = intera_interface.Gripper('right_gripper')
+  gripper.open()
+
+  if len(xlist) == len(ylist) and len(xlist) >= 3:
+    # move blocks at each x,y pair to predetermined point
+    for i in range(0, 4):
+    # pick up block at location
+      move_to(xlist[i], ylist[i], 0.20)
+      move_to(xlist[i], ylist[i], 0.10)
+      gripper.close()
+
+      # move block to another location
+      move_to(-0.1, -0.2, 0.40)
+      move_to(-0.1, -0.2, (i + 1) * 0.10)
+      gripper.open()
+
+  # move gripper above the stack after it has been built
+  move_to(-0.1, -0.2, 0.40)
+
+def move_to(x, y, z):
+  
+  global limb
+  limb = intera_interface.Limb('right')
+  # command
+  headDisplay = head.HeadDisplay()
+  rospy.sleep(1)
+  # operation_x = Gp.in_to_m(25)
+  operation_x = x
+  # operation_y_1 = Gp.in_to_m(-19)
+  operation_y_1 = y
+  operation_y_2 = -1 * operation_y_1
+  # Pre-grasping joint angles
+  dQ = Gp.euler_to_quaternion(z=0)
+  # print dQ
+  operation_height_upper = z
+  # x = 36 inch, y = -18 inch
+  camera_center_human_right = Gp.ik_service_client(limb='right', use_advanced_options=True,
+                                              p_x=operation_x, p_y=operation_y_1, p_z=operation_height_upper,
+                                              q_x=dQ[0], q_y=dQ[1], q_z=dQ[2], q_w=dQ[3])
+
+  # x = 36 inch, y = 18 inch
+  camera_center_human_left = Gp.ik_service_client(limb='right', use_advanced_options=True,
+                                              p_x=operation_x, p_y=operation_y_2, p_z=operation_height_upper,
+                                              q_x=dQ[0], q_y=dQ[1], q_z=dQ[2], q_w=dQ[3])
+
+  moveComm = Gp.moveit_commander
+  moveComm.roscpp_initialize(sys.argv)
+
+  robot = moveComm.RobotCommander()
+  scene = moveComm.PlanningSceneInterface()
+
+  group_name = "right_arm"
+  group = moveComm.MoveGroupCommander(group_name)
+  display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
+                                                   Gp.moveit_msgs.msg.DisplayTrajectory,
+                                                   queue_size=20)
+
+  planning_frame = group.get_planning_frame()
+
+  eef_link = group.get_end_effector_link()
+  Gp.load_objects(scene, planning_frame)
+  Gp.load_camera_w_mount(scene)
+
+  # print limb.joint_angles()
+  dQ = Gp.euler_to_quaternion(z=3.1415/2)
+  # print dQ
+
+  drop_block_pos = camera_center_human_right
+
+  start = time.time()
+  # command
+  Gp.move_move(limb, group, drop_block_pos, 0.1)
+  rospy.sleep(0.2)
+
 
 def point_action(x, y):
   rospy.init_node("GraspingDemo")
